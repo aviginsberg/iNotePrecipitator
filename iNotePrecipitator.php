@@ -12,14 +12,18 @@ class iNotePrecipitator
 {
 
     //Variables
-    protected $imap, $all_notes, $regular_notes, $deleted_notes, $notes_mailbox_info, $note_headers;
+    protected $imap, $email, $username, $domain, $all_notes, $regular_notes, $deleted_notes, $notes_mailbox_info, $note_headers;
     public $login_success;
 
     //Constructor
     function __construct($email, $password)
     {
+        //explode email address into username and domain
+        $this->username = explode("@",$email)[0];
+        $this->domain = explode("@",$email)[1];
+
         //Open the connection to iCloud notes mailbox
-        $this->imap = imap_open('{imap.mail.me.com:993/imap/ssl}Notes', $email, $password);
+        $this->imap = imap_open('{imap.mail.me.com:993/imap/ssl}Notes', $this->username, $password);
 
         //set the login status
         if (!$this->imap) {
