@@ -1,7 +1,7 @@
 <?php
 
 /**
- * myCloudyNotes.php
+ * iNotePrecipitator.php
  * iCloud Notes Access Functions Class
  * by Avi Ginsberg
  *
@@ -22,9 +22,9 @@ class iNotePrecipitator
         $this->imap = imap_open('{imap.mail.me.com:993/imap/ssl}Notes', $email, $password);
 
         //set the login status
-        if(!$this->imap){
+        if (!$this->imap) {
             $this->login_success = FALSE;
-        }else{
+        } else {
             $this->login_success = TRUE;
         }
 
@@ -79,7 +79,6 @@ class iNotePrecipitator
             "ID-Num" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Msgno']),
             "Size" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Size']),
             "Note" => trim(quoted_printable_decode(imap_fetchbody($this->imap, $ID_Num, "1"))));
-
     }
 
 
@@ -168,7 +167,7 @@ class iNotePrecipitator
         $this->deleted_notes = Array();
         for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
             if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] == "D") {
-                array_push($this->deleted_notes,$this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
+                array_push($this->deleted_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
             }
         }
 
@@ -177,3 +176,4 @@ class iNotePrecipitator
     }
 
 
+}
