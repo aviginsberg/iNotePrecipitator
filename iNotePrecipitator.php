@@ -2,10 +2,9 @@
 
 /**
  * iNotePrecipitator.php
+ *
  * iCloud Notes Access Functions Class
  * by Avi Ginsberg
- *
- * IDE: PhpStorm.
  *
  */
 class iNotePrecipitator
@@ -36,25 +35,42 @@ class iNotePrecipitator
         $this->notes_mailbox_info = get_object_vars(imap_mailboxmsginfo($this->imap));
     }
 
-    //returns the number of deleted notes
-    function Get_Deleted_Notes_Count()
-    {
-        return $this->notes_mailbox_info['Deleted'];
-    }
 
-    //returns total number of notes (deleted and regular)
+
+    /**
+     * @return int <u>Description:</u><br>Returns total number of notes (deleted and regular).
+     */
     function Get_Total_Notes_Count()
     {
         return $this->notes_mailbox_info['Nmsgs'];
     }
 
-    //returns the number of regular notes
 
+    /**
+     * @return int <u>Description:</u><br>Returns number of regular notes.
+     */
     function Get_Regular_Notes_Count()
     {
         return $this->notes_mailbox_info['Nmsgs'] - $this->notes_mailbox_info['Deleted'];
     }
 
+
+    /**
+     * @return int <u>Description:</u><br>Returns number of deleted notes.
+     */
+    function Get_Deleted_Notes_Count()
+    {
+        return $this->notes_mailbox_info['Deleted'];
+    }
+
+
+    /**
+     * Get the header data of a note and returns it as an associative array.
+     *
+     * @param int $notenumber The numerical ID of the note.
+     *
+     * @return Array <u>Description:</u><br>An associative array containing header data.<br>Common values are "Date", "Subject", and "Size". Other values may be present. These values differ based on iOS version that created the note.
+     */
     function Get_Note_Header_By_Note_Number($notenumber)
     {
         //if we already have the header data, return the requested header
@@ -73,6 +89,9 @@ class iNotePrecipitator
     }
 
 
+
+
+
     function Get_Note_With_Header_Data_By_ID_Num($ID_Num)
     {
         return Array(
@@ -86,7 +105,115 @@ class iNotePrecipitator
     }
 
 
-    //test function to check connection
+
+
+
+    /**
+     * Gets all deleted notes and returns them in an associative array.
+     *
+     * @return Array <u>Description:</u><br>Returns an associative array of deleted notes formatted as:<br>Note_ID_Number => Array(Note & Header Data)
+     */
+    function Get_All_Deleted_Notes()
+    {
+        if (isset($this->deleted_notes))
+            return $this->deleted_notes;
+
+
+        $this->deleted_notes = Array();
+        for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
+            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] == "D") {
+                array_push($this->deleted_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
+            }
+        }
+
+        return $this->deleted_notes;
+
+    }
+
+
+    /**
+     * Gets all regular notes and returns them in an associative array.
+     *
+     * @return Array <u>Description:</u><br>Returns an associative array of regular notes formatted as:<br>Note_ID_Number => Array(Note & Header Data)
+     */
+    function Get_All_Regular_Notes()
+    {
+        if (isset($this->regular_notes))
+            return $this->regular_notes;
+
+
+        $this->regular_notes = Array();
+        for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
+            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] != "D") {
+                array_push($this->regular_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
+            }
+        }
+
+        return $this->regular_notes;
+    }
+
+
+
+    function Edit_Note_by_ID($ID_num, $note_text, $timestamp = FALSE){
+
+    }
+
+
+    /**
+     * Create a new note with a given subject and body text.
+     *
+     * @param string $Note_Subject The note subject
+     * @param string $Note_Text The note body text
+     *
+     * @return boolean <u>Description:</u><br>Returns TRUE if the note was created successfully and FALSE if the creation failed
+     */
+    function Create_New_Note($Note_Subject, $Note_Text)
+{
+    $currenttime = strftime('%a, %d %b %Y %H:%M:%S %z');
+    $note = "Date: $currenttime\nFrom: $this->email\nX-Uniform-Type-Identifier: com.apple.mail-note\nContent-Type: text/html;\nSubject: $Note_Subject\n\n$Note_Text";
+
+    return imap_append($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", $note);
+
+
+}
+
+
+
+
+//List notes by date (newest first).
+//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
+//Return FALSE if there are no notes
+    function Get_Notes_By_Date_Ascending()
+    {
+
+    }
+
+//List notes by date (oldest first).
+//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
+//Return FALSE if there are no notes
+    function Get_Notes_By_Date_Descending()
+    {
+
+    }
+
+    function List_Note_IDs_By_Date_Ascending()
+    {
+
+    }
+
+    function List_Note_IDs_By_Date_Descending()
+    {
+
+    }
+
+
+    /**
+     * Dev function for checking connection info, finding hooks, etc. May change at any time.
+     *
+     * @todo Remove in final version.
+     *
+     * @return void
+     */
     function testconn()
     {
         // print_r(imap_list($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", "*"));
@@ -111,7 +238,7 @@ class iNotePrecipitator
                 //print "\n~~~Note Content:\n".imap_qprint(imap_fetchbody($this->imap,$msgnumber,"1"))."\n\n\n";
 
                 print "\n~~~Note Content:\n" . quoted_printable_decode(imap_fetchbody($this->imap, $msgnumber, "1")) . "\n\n\n";
-//
+
                 //print_r($usable_header);
                 //die();
 
@@ -142,81 +269,6 @@ class iNotePrecipitator
 
 
     }
-
-
-
-
-    //returns associative array: Note_ID_Number => Array(Note & Header Data)
-    function Get_All_Deleted_Notes()
-    {
-        if (isset($this->deleted_notes))
-            return $this->deleted_notes;
-
-
-        $this->deleted_notes = Array();
-        for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
-            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] == "D") {
-                array_push($this->deleted_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
-            }
-        }
-
-        return $this->deleted_notes;
-
-    }
-
-    //returns associative array: Note_ID_Number => Array(Note & Header Data)
-    function Get_All_Regular_Notes()
-    {
-        if (isset($this->regular_notes))
-            return $this->regular_notes;
-
-
-        $this->regular_notes = Array();
-        for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
-            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] != "D") {
-                array_push($this->regular_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
-            }
-        }
-
-        return $this->regular_notes;
-    }
-
-
-
-
-//List notes by date (newest first).
-//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
-//Return FALSE if there are no notes
-function List_Notes_By_Date_Ascending()
-{
-
-}
-
-//List notes by date (oldest first).
-//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
-//Return FALSE if there are no notes
-function List_Notes_By_Date_Descending()
-{
-
-}
-
-
-
-
-function Edit_Note_by_ID($ID_num, $note_text, $timestamp = FALSE){
-
-}
-
-//createa a new note with a given subject and body text. returns TRUE on successful creation and FALSE on failure.
-function Create_New_Note($Note_Subject, $Note_Text)
-{
-    $currenttime = strftime('%a, %d %b %Y %H:%M:%S %z');
-    $note = "Date: $currenttime\nFrom: $this->email\nX-Uniform-Type-Identifier: com.apple.mail-note\nContent-Type: text/html;\nSubject: $Note_Subject\n\n$Note_Text";
-
-    return imap_append($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", $note);
-
-
-}
 
 
 }
