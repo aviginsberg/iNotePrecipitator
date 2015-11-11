@@ -141,21 +141,6 @@ class iNotePrecipitator
 
 
 
-    //List notes by date (newest first).
-    //Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
-    //Return FALSE if there are no notes
-    function List_Notes_By_Date_Ascending()
-    {
-
-    }
-
-    //List notes by date (oldest first).
-    //Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
-    //Return FALSE if there are no notes
-    function List_Notes_By_Date_Descending()
-    {
-
-    }
 
     //returns associative array: Note_ID_Number => Array(Note & Header Data)
     function Get_All_Deleted_Notes()
@@ -174,6 +159,60 @@ class iNotePrecipitator
         return $this->deleted_notes;
 
     }
+
+    //returns associative array: Note_ID_Number => Array(Note & Header Data)
+    function Get_All_Regular_Notes()
+    {
+        if (isset($this->regular_notes))
+            return $this->regular_notes;
+
+
+        $this->regular_notes = Array();
+        for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
+            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] != "D") {
+                array_push($this->regular_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
+            }
+        }
+
+        return $this->regular_notes;
+    }
+
+
+
+
+//List notes by date (newest first).
+//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
+//Return FALSE if there are no notes
+function List_Notes_By_Date_Ascending()
+{
+
+}
+
+//List notes by date (oldest first).
+//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
+//Return FALSE if there are no notes
+function List_Notes_By_Date_Descending()
+{
+
+}
+
+
+
+
+function Edit_Note_by_ID($ID_num, $note_text, $timestamp = FALSE){
+
+}
+
+//createa a new note with a given subject and body text. returns TRUE on successful creation and FALSE on failure.
+function Create_New_Note($Note_Subject, $Note_Text)
+{
+    $currenttime = strftime('%a, %d %b %Y %H:%M:%S %z');
+    $note = "Date: $currenttime\nFrom: $this->email\nX-Uniform-Type-Identifier: com.apple.mail-note\nContent-Type: text/html;\nSubject: $Note_Subject\n\n$Note_Text";
+
+    return imap_append($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", $note);
+
+
+}
 
 
 }
