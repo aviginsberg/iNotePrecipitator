@@ -4,15 +4,70 @@
  * iNotePrecipitator.php
  *
  * iCloud Notes Access Functions Class
- * by Avi Ginsberg
+ *
+ * @version 0.0.6
+ *
+ * @author Avi Ginsberg
  *
  */
 class iNotePrecipitator
 {
 
-    //Variables
-    protected $imap, $email, $username, $domain, $all_notes, $regular_notes, $deleted_notes, $notes_mailbox_info, $note_headers;
-    public $login_success;
+
+    protected
+        /**
+         * IMAP connection object.
+         * @var object
+         */
+        $imap,
+
+        /**
+         * The user's email address.
+         * @var string
+         */
+        $email,
+
+        /**
+         * The user's username (everything before the @ symbol in the email address.) Derived from $email.
+         * @var string
+         */
+        $username,
+
+        /**
+         * The FQDN of the user's email address (everything after the @ symbol in the email address.) Derived from $email.
+         * @var string
+         */
+        $domain,
+
+        /**
+         * Associative array containing all regular notes from the user's icloud account. (regular notes are non-deleted notes)
+         * @var array
+         */
+        $regular_notes,
+
+        /**
+         * Associative array containing all deleted notes from the user's icloud account.
+         * @var array
+         */
+        $deleted_notes,
+
+        /**
+         * Associative array containing various properties of the notes storage mailbox including: Date, Driver, Mailbox name, Number of notes, Notes storage mailbox size.
+         * @var array
+         */
+        $notes_mailbox_info,
+
+        /**
+         * Associative array containing all note header data.
+         * @var array
+         */
+        $note_headers;
+
+    /**
+     * Boolean representing login success. Is set to TRUE when an icloud login has been completed successfully.
+     * @var boolean
+     */
+    public $login_success = FALSE;
 
     //Constructor
     function __construct($email, $password)
@@ -64,18 +119,21 @@ class iNotePrecipitator
     }
 
 
+
+
+
     /**
      * Get the header data of a note and returns it as an associative array.
      *
-     * @param int $notenumber The numerical ID of the note.
+     * @param int $ID_Num The numerical ID of the note.
      *
-     * @return Array <u>Description:</u><br>An associative array containing header data.<br>Common values are "Date", "Subject", and "Size". Other values may be present. These values differ based on iOS version that created the note.
+     * @return Array <u>Description:</u><br>An associative array containing note header data.<br>Common values are "Date", "Subject", and "Size". Other values may be present. These values differ based on iOS version that created the note.
      */
-    function Get_Note_Header_By_Note_Number($notenumber)
+    function Get_Note_Header_By_Note_Number($ID_Num)
     {
         //if we already have the header data, return the requested header
         if (isset($this->note_headers)) {
-            return $this->note_headers[$notenumber - 1];
+            return $this->note_headers[$ID_Num - 1];
 
             //get all note header data and store it for future use
         } else {
@@ -83,13 +141,10 @@ class iNotePrecipitator
             for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
                 $this->note_headers[$notenum_loop - 1] = get_object_vars(imap_header($this->imap, $notenum_loop));
             }
-            return $this->note_headers[$notenumber - 1];
+            return $this->note_headers[$ID_Num - 1];
         }
 
     }
-
-
-
 
 
     function Get_Note_With_Header_Data_By_ID_Num($ID_Num)
@@ -104,6 +159,21 @@ class iNotePrecipitator
             "Note" => trim(quoted_printable_decode(imap_fetchbody($this->imap, $ID_Num, "1"))));
     }
 
+
+    function Get_Note_Body_By_ID_Num($ID_Num)
+    {
+        return trim(quoted_printable_decode(imap_fetchbody($this->imap, $ID_Num, "1")));
+    }
+
+    function Get_Note_Subject_By_ID_Num($ID_Num)
+    {
+        return trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Subject']);
+    }
+
+    function Get_Note_Size_By_ID_Num($ID_Num)
+    {
+        return trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Size']);
+    }
 
 
 
@@ -154,28 +224,29 @@ class iNotePrecipitator
 
 
 
-    function Edit_Note_by_ID($ID_num, $note_text, $timestamp = FALSE){
 
-    }
 
 
     /**
      * Create a new note with a given subject and body text.
      *
-     * @param string $Note_Subject The note subject
-     * @param string $Note_Text The note body text
+     * @param string $Note_Subject The note subject.
+     * @param string $Note_Text The note body text.
      *
      * @return boolean <u>Description:</u><br>Returns TRUE if the note was created successfully and FALSE if the creation failed
      */
     function Create_New_Note($Note_Subject, $Note_Text)
-{
+    {
     $currenttime = strftime('%a, %d %b %Y %H:%M:%S %z');
     $note = "Date: $currenttime\nFrom: $this->email\nX-Uniform-Type-Identifier: com.apple.mail-note\nContent-Type: text/html;\nSubject: $Note_Subject\n\n$Note_Text";
 
     return imap_append($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", $note);
+    }
 
 
-}
+    function Edit_Note_by_ID($ID_num, $note_text, $timestamp = FALSE){
+
+    }
 
 
 
