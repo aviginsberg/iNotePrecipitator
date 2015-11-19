@@ -5,7 +5,7 @@
  *
  * iCloud Notes Access Functions Class
  *
- * @version 0.0.6
+ * @version 0.0.7
  *
  * @author Avi Ginsberg
  *
@@ -129,7 +129,7 @@ class iNotePrecipitator
      *
      * @return Array <u>Description:</u><br>An associative array containing note header data.<br>Common values are "Date", "Subject", and "Size". Other values may be present. These values differ based on iOS version that created the note.
      */
-    function Get_Note_Header_By_Note_Number($ID_Num)
+    function Get_Note_Header_By_ID_Num($ID_Num)
     {
         //if we already have the header data, return the requested header
         if (isset($this->note_headers)) {
@@ -150,12 +150,12 @@ class iNotePrecipitator
     function Get_Note_With_Header_Data_By_ID_Num($ID_Num)
     {
         return Array(
-            "Date" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Date']),
-            "H-Date" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['MailDate']),
-            "Unix-Date" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['udate']),
-            "Subject" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Subject']),
-            "ID-Num" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Msgno']),
-            "Size" => trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Size']),
+            "Date" => trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Date']),
+            "H-Date" => trim($this->Get_Note_Header_By_ID_Num($ID_Num)['MailDate']),
+            "Unix-Date" => trim($this->Get_Note_Header_By_ID_Num($ID_Num)['udate']),
+            "Subject" => trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Subject']),
+            "ID-Num" => trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Msgno']),
+            "Size" => trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Size']),
             "Note" => trim(quoted_printable_decode(imap_fetchbody($this->imap, $ID_Num, "1"))));
     }
 
@@ -167,12 +167,12 @@ class iNotePrecipitator
 
     function Get_Note_Subject_By_ID_Num($ID_Num)
     {
-        return trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Subject']);
+        return trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Subject']);
     }
 
     function Get_Note_Size_By_ID_Num($ID_Num)
     {
-        return trim($this->Get_Note_Header_By_Note_Number($ID_Num)['Size']);
+        return trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Size']);
     }
 
 
@@ -191,7 +191,7 @@ class iNotePrecipitator
 
         $this->deleted_notes = Array();
         for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
-            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] == "D") {
+            if ($this->Get_Note_Header_By_ID_Num($notenum_loop)['Deleted'] == "D") {
                 array_push($this->deleted_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
             }
         }
@@ -214,7 +214,7 @@ class iNotePrecipitator
 
         $this->regular_notes = Array();
         for ($notenum_loop = 1; $notenum_loop <= $this->Get_Total_Notes_Count(); $notenum_loop++) {
-            if ($this->Get_Note_Header_By_Note_Number($notenum_loop)['Deleted'] != "D") {
+            if ($this->Get_Note_Header_By_ID_Num($notenum_loop)['Deleted'] != "D") {
                 array_push($this->regular_notes, $this->Get_Note_With_Header_Data_By_ID_Num($notenum_loop));
             }
         }
@@ -244,9 +244,51 @@ class iNotePrecipitator
     }
 
 
-    function Edit_Note_by_ID($ID_num, $note_text, $timestamp = FALSE){
+    /**
+     * Delete a note by ID. (And force deletion)
+     *
+     * @param int $ID_Num The note's ID number.
+     * @param boolean $Expunge Whether to expunge the note or not. Default is TRUE. See description.
+     *
+     * @return void <u>Description:</u><br>This method deletes a note by ID. If $Expunge is set to FALSE it will only mark the message for deletion (set a flag). Setting it to TRUE forces deletion of the message. This may also delete all other messages that have been marked for deletion.
+     */
+    function Delete_Note_By_ID($ID_Num, $Expunge = TRUE)
+    {
+        imap_delete($this->imap,$ID_Num);
+
+        if($Expunge)
+            imap_expunge($this->imap);
+    }
+
+    /**
+     * UnDelete a note by ID (that has been marked as deleted)
+     *
+     * @param int $ID_Num The note's ID number.
+     *
+     * @return void <u>Description:</u><br>This method deletes a note by ID. It is designed to undelete notes that are marked as deleted but are still in the icloud.<u>Warning:</u><br> Setting $Expunge to TRUE will destroy any chance of recovering accidentally deleted notes.
+     */
+    function UnDelete_Note_By_ID($ID_Num)
+    {
+        imap_undelete($this->imap, $ID_Num);
+    }
+
+    /**
+     * Permenantly deletes all notes that are marked as "deleted" but are still in the icloud.
+     *
+     *
+     * @return void <u>Warning:</u><br> This will destroy any chance of recovering accidentally deleted notes.
+     */
+    function Expunge_Notes_Pending_Deletion()
+    {
+        imap_expunge($this->imap);
+    }
+
+
+    function Edit_Note_by_ID_Num($ID_Num, $note_text, $timestamp = FALSE){
 
     }
+
+
 
 
 
@@ -267,14 +309,41 @@ class iNotePrecipitator
 
     }
 
+    //oldest to newest
+    /**
+     * Generate a list of note IDs from oldest to newest note (based on note's timestamp).
+     *
+     *
+     * @return Array <u>Description:</u><br> Returns an array of note ID's with the newest note ID in slot O of the array, and the oldest note ID in the last slot of the array.
+     */
     function List_Note_IDs_By_Date_Ascending()
     {
+        $Sorted_IDs = Array();
 
+        foreach($this->Get_All_Regular_Notes() as $Note_ID => $Note_Data_Array)
+        {
+            
+            $Sorted_IDs = $Sorted_IDs + Array($Note_ID+1 => $Note_Data_Array['Unix-Date']);
+        }
+
+        asort($Sorted_IDs);
+
+        return array_keys($Sorted_IDs);
     }
 
+    //newest to oldest
     function List_Note_IDs_By_Date_Descending()
     {
+        $Sorted_IDs = Array();
 
+        foreach($this->Get_All_Regular_Notes() as $Note_ID => $Note_Data_Array)
+        {
+            $Sorted_IDs = $Sorted_IDs + Array($Note_ID+1 => $Note_Data_Array['Unix-Date']);
+        }
+
+        arsort($Sorted_IDs);
+
+        return array_keys($Sorted_IDs);
     }
 
 
