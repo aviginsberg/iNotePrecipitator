@@ -5,7 +5,7 @@
  *
  * iCloud Notes Access Functions Class
  *
- * @version 0.0.7
+ * @version 0.0.8
  *
  * @author Avi Ginsberg
  *
@@ -244,6 +244,15 @@ class iNotePrecipitator
     }
 
 
+
+    function Edit_Note_by_ID_Num($ID_Num, $note_text, $note_subject = FALSE, $timestamp = FALSE){
+        //Array ( [Date] => Wed, 11 Nov 2015 12:10:02 -0500 [H-Date] => 11-Nov-2015 17:10:02 +0000 [Unix-Date] => 1447261802 [Subject] => Bark!!! [ID-Num] => 2 [Size] => 481 [Note] => Bark!!! )
+
+
+    }
+
+
+
     /**
      * Delete a note by ID. (And force deletion)
      *
@@ -284,11 +293,51 @@ class iNotePrecipitator
     }
 
 
-    function Edit_Note_by_ID_Num($ID_Num, $note_text, $timestamp = FALSE){
+
+    /**
+     * Searches all regular notes (note body text) for a given string. Supports case sensitivity and regex.
+     *
+     * @param string $search_string The string to search for. (or the pattern to match if in regex mode)
+     * @param int $search_mode The search mode. 0 for RegEx, 1 for CaSe SeNsItIvE, 2 for case insensitive.
+     *
+     * @return Array <u>Description:</u><br>Returns an associative array of regular notes that matched the search string or pattern formatted as:<br>Note_ID_Number => Array(Note & Header Data)
+     */
+    function Search_Notes($search_string, $search_mode)
+    {
+       $matches = Array();
+
+       foreach ($this->Get_All_Regular_Notes() as $regnote)
+       {
+
+           switch($search_mode)
+           {
+               //ReGex search
+               case 0:
+                   if(preg_match("/".$search_string."/",$regnote['Note']) > 0)
+                       $matches = $matches + $regnote;
+                   break;
+
+               //CaSe SeNsItIvE search
+               case 1:
+                   if(strstr($regnote['Note'],$search_string) != FALSE)
+                       $matches = $matches + $regnote;
+                   break;
+
+               //case insensitive search
+               case 2:
+                   if(stristr($regnote['Note'],$search_string) != FALSE)
+                       $matches = $matches + $regnote;
+                   break;
+
+               default:
+                   die("Error: Invalid Search Mode given in function Search_Notes()");
+           }
+
+       }
+
+       return $matches;
 
     }
-
-
 
 
 
@@ -309,12 +358,11 @@ class iNotePrecipitator
 
     }
 
-    //oldest to newest
+
     /**
-     * Generate a list of note IDs from oldest to newest note (based on note's timestamp).
+     * Generate a list of note IDs in Ascending order (from oldest to newest note based on note timestamps).
      *
-     *
-     * @return Array <u>Description:</u><br> Returns an array of note ID's with the newest note ID in slot O of the array, and the oldest note ID in the last slot of the array.
+     * @return Array <u>Description:</u><br> Returns an array of note ID's with the oldest note ID in slot O of the array, and the newest note ID in the last slot of the array.
      */
     function List_Note_IDs_By_Date_Ascending()
     {
@@ -332,6 +380,11 @@ class iNotePrecipitator
     }
 
     //newest to oldest
+    /**
+     * Generate a list of note IDs in Descending order (from newest to oldest note based on note timestamps).
+     *
+     * @return Array <u>Description:</u><br> Returns an array of note ID's with the newest note ID in slot O of the array, and the oldest note ID in the last slot of the array.
+     */
     function List_Note_IDs_By_Date_Descending()
     {
         $Sorted_IDs = Array();
