@@ -5,7 +5,7 @@
  *
  * iCloud Notes Access Functions Class
  *
- * @version 0.0.8
+ * @version 0.0.9
  *
  * @author Avi Ginsberg
  *
@@ -159,23 +159,57 @@ class iNotePrecipitator
             "Note" => trim(quoted_printable_decode(imap_fetchbody($this->imap, $ID_Num, "1"))));
     }
 
-
+    /**
+     * Get the body text of a specific note.
+     *
+     * @param int $ID_Num The numerical ID of the note.
+     *
+     * @return string <u>Description:</u><br>The body text of the note.
+     */
     function Get_Note_Body_By_ID_Num($ID_Num)
     {
         return trim(quoted_printable_decode(imap_fetchbody($this->imap, $ID_Num, "1")));
     }
 
+    /**
+     * Get the subject of a specific note.
+     *
+     * @param int $ID_Num The numerical ID of the note.
+     *
+     * @return string <u>Description:</u><br>The subject of the note.
+     */
     function Get_Note_Subject_By_ID_Num($ID_Num)
     {
         return trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Subject']);
     }
 
+    /**
+     * Get the size (in bytes) of a specific note.
+     *
+     * @param int $ID_Num The numerical ID of the note.
+     *
+     * @return int <u>Description:</u><br>The size (in bytes) of the note.
+     */
     function Get_Note_Size_By_ID_Num($ID_Num)
     {
         return trim($this->Get_Note_Header_By_ID_Num($ID_Num)['Size']);
     }
 
+    /**
+     * Check if the a note exists (based on note ID).
+     *
+     * @param int $ID_Num The numerical ID of the note.
+     *
+     * @return boolean <u>Description:</u><br>TRUE if the note exists. FALSE if the note does NOT exist.
+     */
+    function Check_If_Note_Exists_By_ID($ID_Num)
+    {
+        if(empty($this->Get_Note_Header_By_ID_Num($ID_Num)['Date']) && empty($this->Get_Note_Header_By_ID_Num($ID_Num)['Size']) && empty($this->Get_Note_Header_By_ID_Num($ID_Num)['Msgno']))
+            return FALSE;
+        else
+            return TRUE;
 
+    }
 
 
     /**
@@ -342,23 +376,6 @@ class iNotePrecipitator
 
 
 
-//List notes by date (newest first).
-//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
-//Return FALSE if there are no notes
-    function Get_Notes_By_Date_Ascending()
-    {
-
-    }
-
-//List notes by date (oldest first).
-//Returns an associative 3d array with the date/timestamp as the key, [key]['subject'] holds the note subject, [key]['note'] holds the note data
-//Return FALSE if there are no notes
-    function Get_Notes_By_Date_Descending()
-    {
-
-    }
-
-
     /**
      * Generate a list of note IDs in Ascending order (from oldest to newest note based on note timestamps).
      *
@@ -400,68 +417,6 @@ class iNotePrecipitator
     }
 
 
-    /**
-     * Dev function for checking connection info, finding hooks, etc. May change at any time.
-     *
-     * @todo Remove in final version.
-     *
-     * @return void
-     */
-    function testconn()
-    {
-        // print_r(imap_list($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", "*"));
-        $note_mailbox_info = get_object_vars(imap_mailboxmsginfo($this->imap));
-
-        print_r($note_mailbox_info);
-
-        //print "\n~~~Note Content:\n".imap_qprint(imap_fetchbody($this->imap,"70","1"))."\n\n\n";
-        //die();
-
-        $total_number_of_notes = $note_mailbox_info['Nmsgs'];
-
-        for ($msgnumber = 1; $msgnumber <= $total_number_of_notes; $msgnumber++) {
-            $header = imap_header($this->imap, $msgnumber);
-            if (!$header) {
-                echo "\nFailed on $msgnumber\n";
-            }
-            $usable_header = get_object_vars($header);
-            if ($usable_header['Deleted'] == "D") {
-                print "Deleted note found! Note ID Number: " . $msgnumber . "\n";
-                print "Note Date: " . $usable_header['date'] . "\n";
-                //print "\n~~~Note Content:\n".imap_qprint(imap_fetchbody($this->imap,$msgnumber,"1"))."\n\n\n";
-
-                print "\n~~~Note Content:\n" . quoted_printable_decode(imap_fetchbody($this->imap, $msgnumber, "1")) . "\n\n\n";
-
-                //print_r($usable_header);
-                //die();
-
-            }
-
-
-            //print_r($header);
-
-            //print "\n\nNote Status: ". $usable_header['Deleted']."\n";
-        }
-
-
-        //$emails = imap_search($this->imap,'ALL');
-        // print_r($emails);
-
-        // $UID = imap_uid($this->imap,"2");
-        //  print imap_fetchbody($this->imap,"4","1");
-        //  var_dump(imap_fetchstructure($this->imap, "4"));
-
-        //   var_dump(imap_num_msg($this->imap));
-        //  var_dump(imap_num_recent($this->imap));
-
-        /*$msgnos = imap_search($this->imap, 'ALL');
-        $uids   = imap_search($this->imap, 'ALL', SE_UID);
-
-        print_r($msgnos);
-        print_r($uids);*/
-
-
-    }
 
 
 }
