@@ -5,7 +5,7 @@
  *
  * iCloud Notes Access Functions Class
  *
- * @version 0.0.9
+ * @version 0.1.0
  *
  * @author Avi Ginsberg
  *
@@ -69,7 +69,14 @@ class iNotePrecipitator
      */
     public $login_success = FALSE;
 
-    //Constructor
+
+
+    /**
+     * Constructs a new iNotePrecipitator object.
+     *
+     * @param string $email The email address used to log into the iCloud account.
+     * @param string $password The password used to log into the iCloud account.
+     */
     function __construct($email, $password)
     {
         //explode email address into username and domain
@@ -93,6 +100,8 @@ class iNotePrecipitator
 
 
     /**
+     * Get the total number of notes in the iCloud account.
+     *
      * @return int <u>Description:</u><br>Returns total number of notes (deleted and regular).
      */
     function Get_Total_Notes_Count()
@@ -102,6 +111,8 @@ class iNotePrecipitator
 
 
     /**
+     * Get the number of regular (non-deleted) notes in the iCloud account.
+     *
      * @return int <u>Description:</u><br>Returns number of regular notes.
      */
     function Get_Regular_Notes_Count()
@@ -111,6 +122,8 @@ class iNotePrecipitator
 
 
     /**
+     * Get the number of deleted notes in the iCloud account.
+     *
      * @return int <u>Description:</u><br>Returns number of deleted notes.
      */
     function Get_Deleted_Notes_Count()
@@ -146,7 +159,13 @@ class iNotePrecipitator
 
     }
 
-
+    /**
+     * Get the header data and body text of a note and returns it as an associative array.
+     *
+     * @param int $ID_Num The numerical ID of the note.
+     *
+     * @return Array <u>Description:</u><br>An associative array containing standardized note header data and note body text.<br>Values are "Date", "H-Date", "Unix-Date", "Subject", "ID-Num", "Size", and "Note".
+     */
     function Get_Note_With_Header_Data_By_ID_Num($ID_Num)
     {
         return Array(
@@ -202,13 +221,28 @@ class iNotePrecipitator
      *
      * @return boolean <u>Description:</u><br>TRUE if the note exists. FALSE if the note does NOT exist.
      */
-    function Check_If_Note_Exists_By_ID($ID_Num)
+    function Check_If_Note_Exists_By_ID_Num($ID_Num)
     {
         if(empty($this->Get_Note_Header_By_ID_Num($ID_Num)['Date']) && empty($this->Get_Note_Header_By_ID_Num($ID_Num)['Size']) && empty($this->Get_Note_Header_By_ID_Num($ID_Num)['Msgno']))
             return FALSE;
         else
             return TRUE;
 
+    }
+
+    /**
+     * Check if the a note is currently marked as deleted (based on note ID).
+     *
+     * @param int $ID_Num The numerical ID of the note.
+     *
+     * @return boolean <u>Description:</u><br>TRUE if the note is marked as deleted. FALSE if the note is NOT marked as deleted.
+     */
+    function Check_If_Note_Is_Deleted_By_ID_Num($ID_Num)
+    {
+        if($this->Get_Note_Header_By_ID_Num($ID_Num)['Deleted'] == "D")
+            return TRUE;
+        else
+            return FALSE;
     }
 
 
@@ -275,14 +309,6 @@ class iNotePrecipitator
     $note = "Date: $currenttime\nFrom: $this->email\nX-Uniform-Type-Identifier: com.apple.mail-note\nContent-Type: text/html;\nSubject: $Note_Subject\n\n$Note_Text";
 
     return imap_append($this->imap, "{imap.mail.me.com:993/imap/ssl}Notes", $note);
-    }
-
-
-
-    function Edit_Note_by_ID_Num($ID_Num, $note_text, $note_subject = FALSE, $timestamp = FALSE){
-        //Array ( [Date] => Wed, 11 Nov 2015 12:10:02 -0500 [H-Date] => 11-Nov-2015 17:10:02 +0000 [Unix-Date] => 1447261802 [Subject] => Bark!!! [ID-Num] => 2 [Size] => 481 [Note] => Bark!!! )
-
-
     }
 
 
